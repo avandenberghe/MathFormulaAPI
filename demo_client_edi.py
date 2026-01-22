@@ -16,10 +16,11 @@ Usage:
 
 import requests
 import uuid
+import os
 from datetime import datetime, timezone, timedelta
 import json
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000")
 
 
 def get_timestamp() -> str:

@@ -49,7 +49,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: formula-demo-client
-    command: python -c "from demo_client import DemoClient; client = DemoClient('http://formula-api:8000'); client.run_demo()"
+    command: python demo_client_edi.py
+    environment:
+      - BASE_URL=http://formula-api:8000
     depends_on:
       formula-api:
         condition: service_healthy
