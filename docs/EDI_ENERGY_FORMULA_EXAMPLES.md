@@ -83,11 +83,11 @@ Sum multiple meter readings with loss factors applied.
 
 **Formula:**
 ```
-Result = (Meter₃₀₅₄ × 1.02 × 1.01) + (Meter₃₀₅₅ × 1.02 × 1.01)
+Result = A + B
 
 Where:
-  - 1.02 = (1 + lossFactorTransformer)
-  - 1.01 = (1 + lossFactorConduction)
+  A = meloId ...3054 (consumption) with 2% transformer loss, 1% conduction loss
+  B = meloId ...3055 (consumption) with 2% transformer loss, 1% conduction loss
 ```
 
 ```bash
@@ -134,7 +134,11 @@ Calculate net consumption (consumption minus production).
 
 **Formula:**
 ```
-Result = Consumption₃₀₅₄ - Production₃₀₅₅
+Result = A - B
+
+Where:
+  A = meloId ...3054 (consumption)
+  B = meloId ...3055 (production)
 ```
 
 ```bash
@@ -181,7 +185,10 @@ Apply scaling factor to meter reading (e.g., 0.49% loss deduction).
 
 **Formula:**
 ```
-Result = Meter₃₀₅₄ × 0.9951
+Result = A × 0.9951
+
+Where:
+  A = meloId ...3054 (consumption)
 ```
 
 ```bash
@@ -220,7 +227,10 @@ Convert units (e.g., Wh to kWh).
 
 **Formula:**
 ```
-Result = Meter₃₀₅₄ ÷ 1000
+Result = A ÷ 1000
+
+Where:
+  A = meloId ...3054 (consumption)
 ```
 
 ```bash
@@ -259,7 +269,10 @@ Get absolute value of a meter reading.
 
 **Formula:**
 ```
-Result = |Meter₃₀₅₄|
+Result = |A|
+
+Where:
+  A = meloId ...3054 (consumption)
 ```
 
 ```bash
@@ -295,8 +308,13 @@ Reference a single meter with loss factors applied.
 
 **Formula:**
 ```
-Result = Meter₃₀₅₄ × (1 + LossTransformer) × (1 + LossConduction) × DistributionFactor
-       = Meter₃₀₅₄ × 1.02 × 1.01 × 0.95
+Result = A × (1 + 0.02) × (1 + 0.01) × 0.95
+
+Where:
+  A = meloId ...3054 (consumption)
+  0.02 = lossFactorTransformer
+  0.01 = lossFactorConduction
+  0.95 = distributionFactorEnergyQuantity
 ```
 
 ```bash
@@ -391,7 +409,11 @@ Note: Must start with a letter.
 
 **Formula:**
 ```
-Result = (Meter₃₀₅₄ - Meter₃₀₅₅) × 0.98
+Result = (A - B) × 0.98
+
+Where:
+  A = meloId ...3054 (consumption)
+  B = meloId ...3055 (production)
 ```
 
 ```bash
@@ -443,7 +465,12 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 **Formula:**
 ```
-Result = (Meter₃₀₅₄ + Meter₃₀₅₅) - (Meter₃₀₅₆ + 50.0)
+Result = (A + B) - (C + 50.0)
+
+Where:
+  A = meloId ...3054 (consumption)
+  B = meloId ...3055 (consumption)
+  C = meloId ...3056 (consumption)
 ```
 
 ```bash
