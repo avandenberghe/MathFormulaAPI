@@ -106,9 +106,15 @@ Headers:
 
 ### Documentation
 
-- **[EDI@Energy Konformitätsnachweis](docs/EDI_ENERGY_KONFORMITAETSNACHWEIS.md)** - Compliance demonstration for the EDI@Energy formula specification (German)
-- **[EDI@Energy Formula Examples](docs/EDI_ENERGY_FORMULA_EXAMPLES.md)** - Technical API reference with curl examples (English)
-- **[API Examples](docs/API_EXAMPLES.md)** - General API usage (time series, calculations, authentication)
+#### German (DE)
+- **[EDI@Energy Konformitätsnachweis](docs/DE/EDI_ENERGY_KONFORMITAETSNACHWEIS.md)** - Konformitätsnachweis für die EDI@Energy Formelspezifikation
+- **[EDI@Energy Formel-Beispiele](docs/DE/EDI_ENERGY_FORMEL_BEISPIELE.md)** - Technische API-Referenz mit curl-Beispielen
+- **[API-Beispiele](docs/DE/API_BEISPIELE.md)** - Allgemeine API-Nutzung (Zeitreihen, Berechnungen, Authentifizierung)
+
+#### English (EN)
+- **[EDI@Energy Compliance Proof](docs/EN/EDI_ENERGY_COMPLIANCE_PROOF.md)** - Compliance demonstration for the EDI@Energy formula specification
+- **[EDI@Energy Formula Examples](docs/EN/EDI_ENERGY_FORMULA_EXAMPLES.md)** - Technical API reference with curl examples
+- **[API Examples](docs/EN/API_EXAMPLES.md)** - General API usage (time series, calculations, authentication)
 
 ## Project Structure
 
@@ -122,6 +128,14 @@ MathformulaAPI/
 │       ├── types/          # TypeScript types
 │       └── services/       # API client
 ├── docs/                   # Documentation
+│   ├── DE/                 # German documentation
+│   │   ├── EDI_ENERGY_KONFORMITAETSNACHWEIS.md
+│   │   ├── EDI_ENERGY_FORMEL_BEISPIELE.md
+│   │   └── API_BEISPIELE.md
+│   ├── EN/                 # English documentation
+│   │   ├── EDI_ENERGY_COMPLIANCE_PROOF.md
+│   │   ├── EDI_ENERGY_FORMULA_EXAMPLES.md
+│   │   └── API_EXAMPLES.md
 │   ├── ARCHITECTURE.md
 │   └── BUSINESS_FLOW.md
 ├── energy-timeseries-api.yaml  # OpenAPI specification
