@@ -97,7 +97,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 **Nachweis - Ungültige maloId (zu kurz):**
 
@@ -139,7 +140,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ---
 
@@ -180,7 +182,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 mit `"timeSlicesAccepted": 2`
+**Erwartete Antwort:** HTTP 202 mit `"timeSlicesAccepted": 2`  (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ---
 
@@ -241,7 +244,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 2.2 Subtraktion (sub)
 
@@ -287,7 +291,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 2.3 Multiplikation (mul)
 
@@ -325,7 +330,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 2.4 Division (div)
 
@@ -363,7 +369,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 2.5 Absolutwert (pos)
 
@@ -398,7 +405,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 2.6 Einzeloperand (operand)
 
@@ -433,7 +441,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ---
 
@@ -528,7 +537,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ### 3.3 formulaVar
 
@@ -553,7 +563,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ---
 
@@ -610,7 +621,8 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
   }'
 ```
 
-**Erwartete Antwort:** HTTP 202 Accepted
+**Erwartete Antwort:** HTTP 202 Accepted (die Formel wurde validiert und zur Verarbeitung angenommen.                                                                 
+  Die Berechnung erfolgt asynchron über den /v1/calculations Endpunkt.)
 
 ---
 
