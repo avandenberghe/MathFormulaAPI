@@ -1,0 +1,484 @@
+{
+  "description": "Real-world formula examples from Metering Concept documents (BESS and KW)",
+  "source": "Metering Concept BESS and KW PDF documents",
+  "examples": [
+    {
+      "name": "Battery 1 Charging without Self-Consumption",
+      "source": "BESS Metering Concept - W+Batt1_oEV",
+      "description": "Calculate charging energy for Battery 1 excluding self-consumption",
+      "category": "SELF_CONSUMPTION",
+      "formula": {
+        "formulaId": "FORM-BESS-BATT1-CHARGE-OEV",
+        "name": "W+Batt1 oEV",
+        "description": "wenn(W+Z1 – (W+ZEV1 + W+ZE_UW) > 0; W+Z1 – (W+ZEV1 + W+ZE_UW); 0)",
+        "expression": {
+          "function": "Wenn_Dann",
+          "parameters": [
+            {
+              "name": "linieA",
+              "value": {
+                "function": "Anteil_Groesser_Als",
+                "parameters": [
+                  {
+                    "name": "zeitreihe",
+                    "value": "W+Z1",
+                    "type": "timeseries_ref",
+                    "obisCode": "1-1:1.29.0"
+                  },
+                  {
+                    "name": "subtrahend",
+                    "value": {
+                      "function": "Grp_Sum",
+                      "parameters": [
+                        {
+                          "name": "ts1",
+                          "value": "W+ZEV1",
+                          "type": "timeseries_ref"
+                        },
+                        {
+                          "name": "ts2",
+                          "value": "W+ZE_UW",
+                          "type": "timeseries_ref"
+                        }
+                      ]
+                    },
+                    "type": "expression"
+                  }
+                ]
+              },
+              "type": "expression"
+            },
+            {
+              "name": "komparator",
+              "value": ">",
+              "type": "string"
+            },
+            {
+              "name": "linieB",
+              "value": 0,
+              "type": "constant"
+            },
+            {
+              "name": "dann",
+              "value": {
+                "function": "Grp_Sum",
+                "parameters": [
+                  {
+                    "name": "minuend",
+                    "value": "W+Z1",
+                    "type": "timeseries_ref"
+                  },
+                  {
+                    "name": "subtrahend1",
+                    "value": "W+ZEV1",
+                    "type": "timeseries_ref",
+                    "scalingFactor": -1
+                  },
+                  {
+                    "name": "subtrahend2",
+                    "value": "W+ZE_UW",
+                    "type": "timeseries_ref",
+                    "scalingFactor": -1
+                  }
+                ]
+              },
+              "type": "expression"
+            },
+            {
+              "name": "sonst",
+              "value": 0,
+              "type": "constant"
+            }
+          ]
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "Z1",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Battery 1 main meter"
+          },
+          {
+            "meteringPointId": "ZEV1",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Battery 1 self-consumption"
+          },
+          {
+            "meteringPointId": "ZE_UW",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Transformer self-consumption"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:1.29.0",
+        "category": "SELF_CONSUMPTION",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "BATTERY",
+          "voltageLevel": "30kV",
+          "tsoOperator": "50Hertz",
+          "location": "Staßfurt"
+        }
+      }
+    },
+    {
+      "name": "Total Self-Consumption Aggregation",
+      "source": "BESS Metering Concept - ΣEV W+",
+      "description": "Aggregate all self-consumption values (billing and network usage relevant)",
+      "category": "BALANCING_AND_GRID_USAGE",
+      "formula": {
+        "formulaId": "FORM-BESS-TOTAL-EV",
+        "name": "ΣEV W+",
+        "description": "W+ZEV1 + W+ZE_UW + W+ZEV2 + W+ZEV3",
+        "expression": {
+          "function": "Grp_Sum",
+          "parameters": [
+            {
+              "name": "ts1",
+              "value": "W+ZEV1",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "ts2",
+              "value": "W+ZE_UW",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "ts3",
+              "value": "W+ZEV2",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "ts4",
+              "value": "W+ZEV3",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            }
+          ],
+          "description": "Sum of all self-consumption metering points"
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "ZEV1",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          },
+          {
+            "meteringPointId": "ZE_UW",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          },
+          {
+            "meteringPointId": "ZEV2",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          },
+          {
+            "meteringPointId": "ZEV3",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:1.29.0",
+        "category": "BALANCING_AND_GRID_USAGE",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "BATTERY",
+          "tsoOperator": "50Hertz",
+          "billingRelevant": true,
+          "networkUsageRelevant": true
+        }
+      }
+    },
+    {
+      "name": "PV Park Billing with Loss Factor",
+      "source": "KW Metering Concept - ΣBil.PV W−",
+      "description": "Calculate PV feed-in with 0.49% loss factor",
+      "category": "BALANCING",
+      "formula": {
+        "formulaId": "FORM-KW-PV-BILLING-LOSSES",
+        "name": "ΣBil.PV W− with Losses",
+        "description": "W−3.5.7 * (1 - fVerluste) where fVerluste = 0.49%",
+        "expression": {
+          "function": "Grp_Sum",
+          "parameters": [
+            {
+              "name": "pv_feedin",
+              "value": "W-3.5.7",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:2.29.0",
+              "scalingFactor": 0.9951
+            }
+          ],
+          "description": "PV feed-in with 0.49% loss deduction"
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "ZP_3.5.7",
+            "obisCode": "1-1:2.29.0",
+            "direction": "FEED_IN",
+            "description": "PV-Park feed-in meter"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:2.29.0",
+        "lossFactor": 0.0049,
+        "category": "BALANCING",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "PV",
+          "voltageLevel": "30kV",
+          "lossPercentage": "0.49%",
+          "billingRelevant": true
+        }
+      }
+    },
+    {
+      "name": "PV Network Usage Calculation",
+      "source": "KW Metering Concept - ΣNN_PV W+",
+      "description": "Calculate PV network usage (consumption minus feed-in)",
+      "category": "GRID_USAGE",
+      "formula": {
+        "formulaId": "FORM-KW-PV-NETWORK-USAGE",
+        "name": "ΣNN_PV W+",
+        "description": "wenn(W+3.5.7 - W-3.5.7 > 0; W+3.5.7 - W-3.5.7; 0)",
+        "expression": {
+          "function": "Wenn_Dann",
+          "parameters": [
+            {
+              "name": "linieA",
+              "value": {
+                "function": "Grp_Sum",
+                "parameters": [
+                  {
+                    "name": "consumption",
+                    "value": "W+3.5.7",
+                    "type": "timeseries_ref",
+                    "obisCode": "1-1:1.29.0"
+                  },
+                  {
+                    "name": "feedin",
+                    "value": "W-3.5.7",
+                    "type": "timeseries_ref",
+                    "obisCode": "1-1:2.29.0",
+                    "scalingFactor": -1
+                  }
+                ]
+              },
+              "type": "expression"
+            },
+            {
+              "name": "komparator",
+              "value": ">",
+              "type": "string"
+            },
+            {
+              "name": "linieB",
+              "value": 0,
+              "type": "constant"
+            },
+            {
+              "name": "dann",
+              "value": {
+                "function": "Grp_Sum",
+                "parameters": [
+                  {
+                    "name": "consumption",
+                    "value": "W+3.5.7",
+                    "type": "timeseries_ref"
+                  },
+                  {
+                    "name": "feedin",
+                    "value": "W-3.5.7",
+                    "type": "timeseries_ref",
+                    "scalingFactor": -1
+                  }
+                ]
+              },
+              "type": "expression"
+            },
+            {
+              "name": "sonst",
+              "value": 0,
+              "type": "constant"
+            }
+          ]
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "ZP_3.5.7",
+            "obisCode": "1-1:1.29.0",
+            "direction": "BIDIRECTIONAL",
+            "description": "PV bidirectional meter"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:1.29.0",
+        "category": "GRID_USAGE",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "PV",
+          "networkUsageRelevant": true
+        }
+      }
+    },
+    {
+      "name": "Battery Billing Aggregation",
+      "source": "KW Metering Concept Battery - ΣBilanz W+",
+      "description": "Simple battery billing aggregation",
+      "category": "BALANCING",
+      "formula": {
+        "formulaId": "FORM-KW-BATTERY-BILLING-TOTAL",
+        "name": "ΣBilanz Battery W+",
+        "description": "W+3.3.1 + W+3.3.3",
+        "expression": {
+          "function": "Grp_Sum",
+          "parameters": [
+            {
+              "name": "meter1",
+              "value": "W+3.3.1",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "meter2",
+              "value": "W+3.3.3",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            }
+          ]
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "ZP_3.3.1",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          },
+          {
+            "meteringPointId": "ZP_3.3.3",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:1.29.0",
+        "category": "BALANCING",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "BATTERY",
+          "voltageLevel": "0.4kV"
+        }
+      }
+    },
+    {
+      "name": "Customer Load Aggregation (BV)",
+      "source": "KW Metering Concept BV - ΣBilanz W+",
+      "description": "Aggregate customer load from 4 feed-in points",
+      "category": "BALANCING",
+      "formula": {
+        "formulaId": "FORM-KW-BV-TOTAL-BILLING",
+        "name": "ΣBilanz BV W+",
+        "description": "W+3.5.1 + W+3.5.2 + W+3.5.3 + W+3.5.4",
+        "expression": {
+          "function": "Grp_Sum",
+          "parameters": [
+            {
+              "name": "einsp1",
+              "value": "W+3.5.1",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "einsp2",
+              "value": "W+3.5.2",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "einsp3",
+              "value": "W+3.5.3",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            },
+            {
+              "name": "einsp4",
+              "value": "W+3.5.4",
+              "type": "timeseries_ref",
+              "obisCode": "1-1:1.29.0"
+            }
+          ],
+          "description": "Total customer billing from Block A and B"
+        },
+        "inputMeteringPoints": [
+          {
+            "meteringPointId": "ZP_3.5.1",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Feed-in 1 Block A"
+          },
+          {
+            "meteringPointId": "ZP_3.5.2",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Feed-in 2 Block A"
+          },
+          {
+            "meteringPointId": "ZP_3.5.3",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Feed-in 3 Block B"
+          },
+          {
+            "meteringPointId": "ZP_3.5.4",
+            "obisCode": "1-1:1.29.0",
+            "direction": "CONSUMPTION",
+            "description": "Feed-in 4 Block B"
+          }
+        ],
+        "outputUnit": "KWH",
+        "outputResolution": "PT15M",
+        "outputObisCode": "1-1:1.29.0",
+        "category": "BALANCING",
+        "version": "1.0.0",
+        "metadata": {
+          "facilityType": "POWER_PLANT",
+          "customerType": "BV",
+          "voltageLevel": "10kV"
+        }
+      }
+    }
+  ],
+  "notes": {
+    "obis_codes": {
+      "1-1:1.29.0": "W+ (Consumption/Withdrawal)",
+      "1-1:2.29.0": "W− (Feed-in)"
+    },
+    "abbreviations": {
+      "Bil": "Billing/Settlement",
+      "NN": "Network Usage",
+      "oEV": "without self-consumption",
+      "EV": "Self-consumption",
+      "ZP": "Metering Point",
+      "UW": "Transformer Station",
+      "BESS": "Battery Energy Storage System",
+      "PV": "Photovoltaic (Solar)",
+      "KW": "Power Plant",
+      "BV": "Operational consumption"
+    },
+    "scaling_factors": {
+      "loss_0.49_percent": 0.9951,
+      "description": "Scaling factor = 1 - (loss_percentage / 100)"
+    }
+  }
+}

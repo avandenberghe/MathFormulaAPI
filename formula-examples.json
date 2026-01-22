@@ -1,0 +1,305 @@
+{
+  "examples": [
+    {
+      "name": "Simple Formula - Anteil_Groesser_Als",
+      "description": "Calculate portion of time series values above threshold",
+      "payload": {
+        "messageId": "FORM-MSG-20251203001",
+        "messageDate": "2025-12-03T10:30:00Z",
+        "sender": {
+          "id": "DE0212345678901",
+          "role": "MSB",
+          "name": "Example TSO"
+        },
+        "formulas": [
+          {
+            "formulaId": "FORM-ANTEIL-GT-001",
+            "name": "Portion above 100 kWh",
+            "description": "Calculates the portion of time series values above 100 kWh",
+            "expression": {
+              "function": "Anteil_Groesser_Als",
+              "parameters": [
+                {
+                  "name": "zeitreihe",
+                  "value": "INPUT_TS",
+                  "type": "timeseries_ref"
+                },
+                {
+                  "name": "grenze",
+                  "value": 100.0,
+                  "type": "constant"
+                }
+              ],
+              "description": "Calculate portion above 100 kWh threshold"
+            },
+            "inputTimeSeries": ["INPUT_TS"],
+            "outputUnit": "KWH",
+            "outputResolution": "PT15M",
+            "version": "1.0.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Complex Nested Formula - Quer_Max",
+      "description": "Maximum across two calculated time series",
+      "payload": {
+        "messageId": "FORM-MSG-20251203002",
+        "messageDate": "2025-12-03T10:35:00Z",
+        "sender": {
+          "id": "DE0212345678901",
+          "role": "MSB"
+        },
+        "formulas": [
+          {
+            "formulaId": "FORM-QUER-MAX-COMPLEX-001",
+            "name": "Cross Maximum with nested calculations",
+            "description": "Calculates the maximum between two calculated time series",
+            "expression": {
+              "function": "Quer_Max",
+              "parameters": [
+                {
+                  "function": "Anteil_Groesser_Als",
+                  "parameters": [
+                    {
+                      "name": "zeitreihe",
+                      "value": "TS1",
+                      "type": "timeseries_ref"
+                    },
+                    {
+                      "name": "grenze",
+                      "value": 50.0,
+                      "type": "constant"
+                    }
+                  ]
+                },
+                {
+                  "function": "Anteil_Kleiner_Als",
+                  "parameters": [
+                    {
+                      "name": "zeitreihe",
+                      "value": "TS2",
+                      "type": "timeseries_ref"
+                    },
+                    {
+                      "name": "grenze",
+                      "value": 200.0,
+                      "type": "constant"
+                    }
+                  ]
+                }
+              ],
+              "description": "Maximum across two calculated time series"
+            },
+            "inputTimeSeries": ["TS1", "TS2"],
+            "outputUnit": "KWH",
+            "outputResolution": "PT15M",
+            "version": "1.0.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Wenn_Dann (If-Then-Else) Formula",
+      "description": "Conditional logic: If TS1 > TS2, return TS1, else 0",
+      "payload": {
+        "messageId": "FORM-MSG-20251203003",
+        "messageDate": "2025-12-03T10:40:00Z",
+        "sender": {
+          "id": "DE0212345678901",
+          "role": "MSB"
+        },
+        "formulas": [
+          {
+            "formulaId": "FORM-WENN-DANN-001",
+            "name": "Conditional comparison",
+            "description": "Returns TS1 if greater than TS2, else 0",
+            "expression": {
+              "function": "Wenn_Dann",
+              "parameters": [
+                {
+                  "name": "linieA",
+                  "value": "TS1",
+                  "type": "timeseries_ref"
+                },
+                {
+                  "name": "komparator",
+                  "value": ">",
+                  "type": "string"
+                },
+                {
+                  "name": "linieB",
+                  "value": "TS2",
+                  "type": "timeseries_ref"
+                },
+                {
+                  "name": "dann",
+                  "value": "TS1",
+                  "type": "timeseries_ref"
+                },
+                {
+                  "name": "sonst",
+                  "value": 0,
+                  "type": "constant"
+                }
+              ],
+              "description": "If TS1 > TS2, return TS1, else 0"
+            },
+            "inputTimeSeries": ["TS1", "TS2"],
+            "outputUnit": "KWH",
+            "outputResolution": "PT15M",
+            "version": "1.0.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Calculation Execution Request",
+      "description": "Execute a formula on actual time series data",
+      "payload": {
+        "calculationId": "CALC-20251203-001",
+        "requestDate": "2025-12-03T10:45:00Z",
+        "formulaId": "FORM-ANTEIL-GT-001",
+        "inputTimeSeries": {
+          "INPUT_TS": "TS-MP10550000000001-A15MIN-20251202"
+        },
+        "period": {
+          "start": "2025-12-02T00:00:00Z",
+          "end": "2025-12-03T00:00:00Z"
+        },
+        "requestedBy": {
+          "id": "DE0212345678901",
+          "role": "MSB"
+        },
+        "outputTimeSeriesId": "TS-CALC-RESULT-20251202"
+      }
+    },
+    {
+      "name": "IMax Formula",
+      "description": "Calculate nth maximum within intervals",
+      "payload": {
+        "messageId": "FORM-MSG-20251203004",
+        "messageDate": "2025-12-03T11:00:00Z",
+        "sender": {
+          "id": "DE0212345678901",
+          "role": "MSB"
+        },
+        "formulas": [
+          {
+            "formulaId": "FORM-IMAX-001",
+            "name": "Daily Maximum",
+            "description": "Calculates the daily maximum of a time series",
+            "expression": {
+              "function": "IMax",
+              "parameters": [
+                {
+                  "name": "zeitreihe",
+                  "value": "INPUT_TS",
+                  "type": "timeseries_ref"
+                },
+                {
+                  "name": "intervall",
+                  "value": "P1D",
+                  "type": "string"
+                },
+                {
+                  "name": "kalender",
+                  "value": "UTC",
+                  "type": "string"
+                },
+                {
+                  "name": "rang",
+                  "value": 1,
+                  "type": "constant"
+                },
+                {
+                  "name": "abstand",
+                  "value": 0,
+                  "type": "constant"
+                }
+              ],
+              "description": "Calculate daily maximum"
+            },
+            "inputTimeSeries": ["INPUT_TS"],
+            "outputUnit": "KWH",
+            "outputResolution": "P1D",
+            "version": "1.0.0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Grp_Sum Formula",
+      "description": "Group summation with dynamic parameters",
+      "payload": {
+        "messageId": "FORM-MSG-20251203005",
+        "messageDate": "2025-12-03T11:15:00Z",
+        "sender": {
+          "id": "DE0212345678901",
+          "role": "MSB"
+        },
+        "formulas": [
+          {
+            "formulaId": "FORM-GRP-SUM-001",
+            "name": "Balancing group sum",
+            "description": "Calculates the sum time series for a balancing group",
+            "expression": {
+              "function": "Grp_Sum",
+              "parameters": [
+                {
+                  "name": "gruppenId",
+                  "value": "BK-GROUP-001",
+                  "type": "string"
+                },
+                {
+                  "name": "bilanzKennzeichen",
+                  "value": "CONSUMPTION",
+                  "type": "string"
+                },
+                {
+                  "name": "einheitMessgroesse",
+                  "value": "KWH",
+                  "type": "string"
+                },
+                {
+                  "name": "zaehlpunktart",
+                  "value": "SLP",
+                  "type": "string"
+                },
+                {
+                  "name": "obis",
+                  "value": "1-0:1.8.0*255",
+                  "type": "string"
+                },
+                {
+                  "name": "zielkennung",
+                  "value": "FORECAST",
+                  "type": "string"
+                },
+                {
+                  "name": "zeitlicherVersatz",
+                  "value": 0,
+                  "type": "constant"
+                },
+                {
+                  "name": "disjunkt",
+                  "value": true,
+                  "type": "constant"
+                }
+              ],
+              "description": "Sum time series for balancing group"
+            },
+            "inputTimeSeries": [],
+            "outputUnit": "KWH",
+            "outputResolution": "PT15M",
+            "version": "1.0.0",
+            "metadata": {
+              "balancingGroup": "DE123456789012-B",
+              "aggregationType": "CONSUMPTION"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

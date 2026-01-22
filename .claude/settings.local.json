@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m pylint:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(docker compose up:*)",
+      "Bash(grep:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:www.bdew-mako.de)",
+      "Bash(ls:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(while read line)",
+      "Bash(do echo \"  ✅ $line\")",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

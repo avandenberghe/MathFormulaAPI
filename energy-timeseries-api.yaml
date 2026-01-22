@@ -1,0 +1,1453 @@
+openapi: 3.0.3
+info:
+  title: Energy Time Series API with Formula Support
+  version: 1.0.0
+  description: |
+    REST API for exchanging time series data in the energy market.
+    This API provides functionality equivalent to UTILTS EDIFACT messages with extended
+    formula calculation functions for billing, network usage, and self-consumption.
+
+    **Key Features:**
+    - Submit time series data and metering values
+    - Retrieve aggregated balancing group data
+    - Support for various measurement types and quality indicators
+    - 11 TSO-required calculation functions
+    - Nested formula expressions for complex calculations
+    - OBIS code integration for smart meter data
+    - Metering point references and loss factor calculations
+
+  contact:
+    name: Energy Formula API Support
+    email:
+  x-api-id: energy-timeseries-api
+  x-audience: external-public
+
+servers:
+  - url: https://api.formula-registry.example/v1
+    description: Production environment
+  - url: https://api-test.formula-registry.example/v1
+    description: Test environment
+
+security:
+  - OAuth2: [timeseries.read, timeseries.write]
+
+tags:
+  - name: Time Series
+    description: Operations for time series data exchange
+  - name: Metering Values
+    description: Submit and retrieve metering values
+  - name: Balancing Groups
+    description: Balancing group aggregation data
+  - name: Formulas
+    description: Define and manage calculation formulas for time series processing (balancing, network usage, self-consumption, losses)
+  - name: Calculations
+    description: Execute formulas on time series data and retrieve results
+
+paths:
+  /time-series:
+    post:
+      tags:
+        - Time Series
+      summary: Submit time series data
+      description: |
+        Submit time series data for metering points. Equivalent to UTILTS message transmission.
+        Supports various time series types (measured values, forecasts, schedules).
+      operationId: submitTimeSeries
+      security:
+        - OAuth2: [timeseries.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeSeriesSubmission'
+            examples:
+              meteringValues:
+                summary: 15-minute metering values
+                value:
+                  messageId: "MSG-2025-12-02-001"
+                  messageDate: "2025-12-02T14:30:00Z"
+                  sender:
+                    id: "DE0212345678901"
+                    role: "MSB"
+                  receiver:
+                    id: "DE0298765432109"
+                    role: "NB"
+                  timeSeries:
+                    - timeSeriesId: "TS-MP10550000000001-A15MIN-20251202"
+                      marketLocationId: "10550000000001"
+                      measurementType: "CONSUMPTION"
+                      unit: "KWH"
+                      resolution: "PT15M"
+                      period:
+                        start: "2025-12-02T00:00:00Z"
+                        end: "2025-12-03T00:00:00Z"
+                      intervals:
+                        - position: 1
+                          start: "2025-12-02T00:00:00Z"
+                          end: "2025-12-02T00:15:00Z"
+                          quantity: "2.456"
+                          quality: "METERED"
+                        - position: 2
+                          start: "2025-12-02T00:15:00Z"
+                          end: "2025-12-02T00:30:00Z"
+                          quantity: "2.123"
+                          quality: "METERED"
+      responses:
+        '201':
+          description: Time series successfully accepted
+          headers:
+            Location:
+              description: URL for retrieving the submitted time series
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeriesAcceptance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Time Series
+      summary: Query time series data
+      description: Retrieve time series data with filter options
+      operationId: queryTimeSeries
+      security:
+        - OAuth2: [timeseries.read]
+      parameters:
+        - name: marketLocationId
+          in: query
+          description: Filter by market location ID
+          schema:
+            type: string
+            format: mrid
+            example: "10550000000001"
+        - name: periodStart
+          in: query
+          required: true
+          description: Start of period (inclusive)
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-01T00:00:00Z"
+        - name: periodEnd
+          in: query
+          required: true
+          description: End of period (exclusive)
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-02T00:00:00Z"
+        - name: measurementType
+          in: query
+          description: Filter by measurement type
+          schema:
+            $ref: '#/components/schemas/MeasurementType'
+        - name: resolution
+          in: query
+          description: Time series resolution
+          schema:
+            $ref: '#/components/schemas/Resolution'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PageToken'
+      responses:
+        '200':
+          description: Time series data successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeriesCollection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /time-series/{timeSeriesId}:
+    get:
+      tags:
+        - Time Series
+      summary: Retrieve specific time series
+      description: Retrieve a specific time series by its unique identifier
+      operationId: getTimeSeries
+      security:
+        - OAuth2: [timeseries.read]
+      parameters:
+        - name: timeSeriesId
+          in: path
+          required: true
+          description: Unique time series identifier
+          schema:
+            type: string
+            format: ts
+            example: "TS-MP10550000000001-A15MIN-20251202"
+      responses:
+        '200':
+          description: Time series found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeries'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /balancing-groups/{balancingGroupId}/aggregated-values:
+    get:
+      tags:
+        - Balancing Groups
+      summary: Retrieve aggregated balancing group values
+      description: |
+        Retrieve aggregated time series for a balancing group.
+        Equivalent to UTILTS aggregated time series (sum time series).
+      operationId: getBalancingGroupAggregation
+      security:
+        - OAuth2: [timeseries.read]
+      parameters:
+        - name: balancingGroupId
+          in: path
+          required: true
+          description: Balancing group identifier
+          schema:
+            type: string
+            format: balancing-group
+            example: "DE123456789012-B"
+        - name: periodStart
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: periodEnd
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: aggregationType
+          in: query
+          required: true
+          description: Type of aggregation
+          schema:
+            type: string
+            enum: [CONSUMPTION, GENERATION, FEED_IN, WITHDRAWAL]
+      responses:
+        '200':
+          description: Aggregated values retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregatedTimeSeries'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /metering-points/{meteringPointId}/values:
+    post:
+      tags:
+        - Metering Values
+      summary: Submit metering point values
+      description: Submit metering values for a specific metering point
+      operationId: submitMeteringValues
+      security:
+        - OAuth2: [timeseries.write]
+      parameters:
+        - name: meteringPointId
+          in: path
+          required: true
+          description: Metering point identifier
+          schema:
+            type: string
+            format: mrid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeteringValuesSubmission'
+      responses:
+        '201':
+          description: Values accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeteringValuesAcceptance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /formulas:
+    post:
+      tags:
+        - Formulas
+      summary: Submit calculation formula
+      description: |
+        Submit one or more calculation formula definitions that can be applied to time series data.
+        Supports all 11 TSO-required calculation functions including nested expressions.
+      operationId: submitFormula
+      security:
+        - OAuth2: [formulas.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormulaSubmission'
+            examples:
+              simpleFormula:
+                summary: Simple Anteil_Groesser_Als formula
+                value:
+                  messageId: "FORM-MSG-20251203001"
+                  messageDate: "2025-12-03T10:30:00Z"
+                  sender:
+                    id: "DE0212345678901"
+                    role: "MSB"
+                  formulas:
+                    - formulaId: "FORM-ANTEIL-GT-001"
+                      name: "Portion above 100 kWh"
+                      description: "Calculates the portion of time series values above 100 kWh"
+                      expression:
+                        function: "Anteil_Groesser_Als"
+                        parameters:
+                          - name: "zeitreihe"
+                            value: "INPUT_TS"
+                            type: "timeseries_ref"
+                          - name: "grenze"
+                            value: 100.0
+                            type: "constant"
+                      inputTimeSeries: ["INPUT_TS"]
+                      outputUnit: "KWH"
+                      outputResolution: "PT15M"
+                      version: "1.0.0"
+              complexFormula:
+                summary: Complex nested Quer_Max formula
+                value:
+                  messageId: "FORM-MSG-20251203002"
+                  messageDate: "2025-12-03T10:35:00Z"
+                  sender:
+                    id: "DE0212345678901"
+                    role: "MSB"
+                  formulas:
+                    - formulaId: "FORM-QUER-MAX-001"
+                      name: "Quer Maximum"
+                      description: "Maximum across multiple time series"
+                      expression:
+                        function: "Quer_Max"
+                        parameters:
+                          - function: "Anteil_Groesser_Als"
+                            parameters:
+                              - name: "zeitreihe"
+                                value: "TS1"
+                                type: "timeseries_ref"
+                              - name: "grenze"
+                                value: 50.0
+                                type: "constant"
+                          - function: "Anteil_Kleiner_Als"
+                            parameters:
+                              - name: "zeitreihe"
+                                value: "TS2"
+                                type: "timeseries_ref"
+                              - name: "grenze"
+                                value: 200.0
+                                type: "constant"
+                      inputTimeSeries: ["TS1", "TS2"]
+                      outputUnit: "KWH"
+                      outputResolution: "PT15M"
+                      version: "1.0.0"
+      responses:
+        '201':
+          description: Formula successfully submitted
+          headers:
+            Location:
+              description: URL zum Abrufen der übermittelten Formel
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormulaAcceptance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags:
+        - Formulas
+      summary: List formulas
+      description: Retrieve list of available formulas with optional filters
+      operationId: listFormulas
+      security:
+        - OAuth2: [formulas.read]
+      parameters:
+        - name: name
+          in: query
+          description: Filter by formula name
+          schema:
+            type: string
+        - name: createdBy
+          in: query
+          description: Filter by creator ID
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: cursor
+          in: query
+          description: Pagination cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of formulas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormulaList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /formulas/{formulaId}:
+    get:
+      tags:
+        - Formulas
+      summary: Get formula by ID
+      description: Retrieve a specific formula definition
+      operationId: getFormula
+      security:
+        - OAuth2: [formulas.read]
+      parameters:
+        - name: formulaId
+          in: path
+          required: true
+          description: Formula identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Formula retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Formula'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /calculations:
+    post:
+      tags:
+        - Calculations
+      summary: Execute calculation
+      description: |
+        Execute a calculation by applying a formula to time series data.
+        The calculation is processed asynchronously.
+      operationId: executeCalculation
+      security:
+        - OAuth2: [calculations.execute]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationRequest'
+            example:
+              calculationId: "CALC-20251203-001"
+              requestDate: "2025-12-03T10:45:00Z"
+              formulaId: "FORM-ANTEIL-GT-001"
+              inputTimeSeries:
+                INPUT_TS: "TS-MP10550000000001-A15MIN-20251202"
+              period:
+                start: "2025-12-02T00:00:00Z"
+                end: "2025-12-03T00:00:00Z"
+              requestedBy:
+                id: "DE0212345678901"
+                role: "MSB"
+              outputTimeSeriesId: "TS-CALC-RESULT-20251202"
+      responses:
+        '202':
+          description: Calculation accepted for processing
+          headers:
+            Location:
+              description: URL to check calculation status
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /calculations/{calculationId}:
+    get:
+      tags:
+        - Calculations
+      summary: Get calculation result
+      description: Retrieve status and result of a calculation
+      operationId: getCalculation
+      security:
+        - OAuth2: [calculations.read]
+      parameters:
+        - name: calculationId
+          in: path
+          required: true
+          description: Calculation identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      description: OAuth2 security scheme for Formula Registry
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.formula-registry.example/oauth/token
+          scopes:
+            timeseries.read: Read time series data
+            timeseries.write: Submit time series data
+            balancing.read: Read balancing group data
+            formulas.read: Read formula definitions
+            formulas.write: Submit formula definitions
+            calculations.read: Read calculation results
+            calculations.execute: Execute calculations
+
+  parameters:
+    PageSize:
+      name: pageSize
+      in: query
+      description: Number of items per page (max. 1000)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+
+    PageToken:
+      name: pageToken
+      in: query
+      description: Token to retrieve the next page
+      schema:
+        type: string
+
+  schemas:
+    TimeSeriesSubmission:
+      type: object
+      required:
+        - messageId
+        - messageDate
+        - sender
+        - receiver
+        - timeSeries
+      properties:
+        messageId:
+          type: string
+          description: Unique message identifier
+          example: "MSG-2025-12-02-001"
+        messageDate:
+          type: string
+          format: date-time
+          description: Timestamp of message creation
+        sender:
+          $ref: '#/components/schemas/MarketParticipant'
+        receiver:
+          $ref: '#/components/schemas/MarketParticipant'
+        timeSeries:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSeries'
+          minItems: 1
+          maxItems: 100
+
+    TimeSeries:
+      type: object
+      required:
+        - timeSeriesId
+        - marketLocationId
+        - measurementType
+        - unit
+        - resolution
+        - period
+        - intervals
+      properties:
+        timeSeriesId:
+          type: string
+          format: ts
+          description: Unique time series identifier
+          example: "TS-MP10550000000001-A15MIN-20251202"
+        marketLocationId:
+          type: string
+          format: mrid
+          description: Market location identifier (Marktlokations-ID)
+          example: "10550000000001"
+        meteringPointId:
+          type: string
+          format: mrid
+          description: Metering point identifier (Messlokations-ID)
+          example: "10550000000001:MP001"
+        measurementType:
+          $ref: '#/components/schemas/MeasurementType'
+        unit:
+          type: string
+          enum: [KWH, MWH, KW, MW]
+          description: Unit of measurement
+        resolution:
+          $ref: '#/components/schemas/Resolution'
+        period:
+          $ref: '#/components/schemas/Period'
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interval'
+          minItems: 1
+        metadata:
+          $ref: '#/components/schemas/TimeSeriesMetadata'
+
+    Interval:
+      type: object
+      required:
+        - position
+        - start
+        - end
+        - quantity
+        - quality
+      properties:
+        position:
+          type: integer
+          minimum: 1
+          description: Sequential position in the time series
+        start:
+          type: string
+          format: date-time
+          description: Interval start time (inclusive)
+        end:
+          type: string
+          format: date-time
+          description: Interval end time (exclusive)
+        quantity:
+          type: string
+          format: decimal
+          description: Measured or calculated quantity
+          example: "2.456789"
+        quality:
+          $ref: '#/components/schemas/QualityIndicator'
+        status:
+          type: string
+          enum: [CONFIRMED, ESTIMATED, PRELIMINARY, CORRECTED]
+          description: Data status
+
+    QualityIndicator:
+      type: string
+      enum:
+        - METERED
+        - ESTIMATED
+        - SUBSTITUTE
+        - FORECASTED
+        - VALIDATED
+        - MISSING
+      description: |
+        Quality indicator for the measured value:
+        - METERED: Actual metered value
+        - ESTIMATED: Estimated value
+        - SUBSTITUTE: Substitute value (Ersatzwert)
+        - FORECASTED: Forecasted value
+        - VALIDATED: Validated value
+        - MISSING: Value not available
+
+    MeasurementType:
+      type: string
+      enum:
+        - CONSUMPTION
+        - GENERATION
+        - FEED_IN
+        - WITHDRAWAL
+        - EXCHANGE
+      description: Type of measurement
+
+    Resolution:
+      type: string
+      enum:
+        - PT15M
+        - PT1H
+        - P1D
+        - P1M
+      description: |
+        Time series resolution (ISO 8601 duration):
+        - PT15M: 15 minutes
+        - PT1H: 1 hour
+        - P1D: 1 day
+        - P1M: 1 month
+
+    Period:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Period start (inclusive)
+        end:
+          type: string
+          format: date-time
+          description: Period end (exclusive)
+
+    MarketParticipant:
+      type: object
+      required:
+        - id
+        - role
+      properties:
+        id:
+          type: string
+          format: edifact-id
+          description: EDIFACT identifier (e.g., GLN)
+          example: "DE0212345678901"
+        role:
+          type: string
+          enum: [MSB, NB, LF, BKV, BA, MV]
+          description: |
+            Market role:
+            - MSB: Messstellenbetreiber (Metering Point Operator)
+            - NB: Netzbetreiber (Network Operator)
+            - LF: Lieferant (Supplier)
+            - BKV: Bilanzkreisverantwortlicher (Balance Responsible Party)
+            - BA: Bilanzierungs- und Aggregierungsverantwortlicher
+            - MV: Messwertverarbeiter
+        name:
+          type: string
+          description: Participant name (optional)
+
+    TimeSeriesMetadata:
+      type: object
+      properties:
+        meteringMethod:
+          type: string
+          enum: [REMOTE_READING, MANUAL_READING, ESTIMATED]
+        tariffStage:
+          type: string
+          description: Tariff stage (Tarifstufe)
+        profileType:
+          type: string
+          description: Standard load profile type
+          example: "H0"
+        businessProcess:
+          type: string
+          description: Associated business process
+
+    TimeSeriesAcceptance:
+      type: object
+      required:
+        - messageId
+        - acceptanceTime
+        - status
+        - timeSeriesIds
+      properties:
+        messageId:
+          type: string
+          description: Original message ID
+        acceptanceTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACCEPTED, PARTIALLY_ACCEPTED, REJECTED]
+        timeSeriesIds:
+          type: array
+          items:
+            type: string
+          description: IDs of accepted time series
+        validationResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationResult'
+
+    ValidationResult:
+      type: object
+      required:
+        - timeSeriesId
+        - valid
+      properties:
+        timeSeriesId:
+          type: string
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+
+    ValidationError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "INVALID_QUANTITY_FORMAT"
+        message:
+          type: string
+          example: "Quantity must have maximum 6 decimal places"
+        field:
+          type: string
+          example: "intervals[5].quantity"
+        intervalPosition:
+          type: integer
+
+    TimeSeriesCollection:
+      type: object
+      required:
+        - timeSeries
+      properties:
+        timeSeries:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSeries'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+        nextPageToken:
+          type: string
+          description: Token for next page (null if last page)
+        totalCount:
+          type: integer
+          description: Total number of items (may be approximate)
+
+    AggregatedTimeSeries:
+      type: object
+      required:
+        - balancingGroupId
+        - aggregationType
+        - period
+        - intervals
+      properties:
+        balancingGroupId:
+          type: string
+          format: balancing-group
+        aggregationType:
+          type: string
+          enum: [CONSUMPTION, GENERATION, FEED_IN, WITHDRAWAL]
+        period:
+          $ref: '#/components/schemas/Period'
+        resolution:
+          $ref: '#/components/schemas/Resolution'
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AggregatedInterval'
+
+    AggregatedInterval:
+      type: object
+      required:
+        - position
+        - start
+        - end
+        - totalQuantity
+      properties:
+        position:
+          type: integer
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        totalQuantity:
+          type: string
+          format: decimal
+        componentCount:
+          type: integer
+          description: Number of individual time series aggregated
+
+    MeteringValuesSubmission:
+      type: object
+      required:
+        - messageId
+        - measurementDate
+        - values
+      properties:
+        messageId:
+          type: string
+        measurementDate:
+          type: string
+          format: date-time
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeteringValue'
+
+    MeteringValue:
+      type: object
+      required:
+        - timestamp
+        - value
+        - unit
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          type: string
+          format: decimal
+        unit:
+          type: string
+          enum: [KWH, MWH]
+        quality:
+          $ref: '#/components/schemas/QualityIndicator'
+        obisCode:
+          type: string
+          format: obis
+          description: OBIS code for identification
+          example: "1-0:1.8.0*255"
+
+    MeteringValuesAcceptance:
+      type: object
+      required:
+        - messageId
+        - acceptanceTime
+        - acceptedCount
+      properties:
+        messageId:
+          type: string
+        acceptanceTime:
+          type: string
+          format: date-time
+        acceptedCount:
+          type: integer
+        rejectedCount:
+          type: integer
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+
+    ProblemDetail:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI reference identifying the problem type
+          example: "https://api.formula-registry.example/problems/validation-error"
+        title:
+          type: string
+          description: Short, human-readable summary
+          example: "Validation Error"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Human-readable explanation
+          example: "The submitted time series contains invalid data"
+        instance:
+          type: string
+          format: uri
+          description: URI reference to this specific occurrence
+          example: "/time-series/TS-MP10550000000001-A15MIN-20251202"
+        invalidParams:
+          type: array
+          description: Details about invalid parameters
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reason:
+                type: string
+
+    # ==================== FORMULA SCHEMAS ====================
+
+    FormulaSubmission:
+      type: object
+      required:
+        - messageId
+        - messageDate
+        - sender
+        - formulas
+      properties:
+        messageId:
+          type: string
+          description: Unique message identifier
+          example: "FORM-MSG-20251203001"
+        messageDate:
+          type: string
+          format: date-time
+          description: Message creation timestamp
+        sender:
+          $ref: '#/components/schemas/MarketParticipant'
+        formulas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Formula'
+          minItems: 1
+          maxItems: 50
+
+    Formula:
+      type: object
+      required:
+        - formulaId
+        - name
+        - description
+        - expression
+        - inputTimeSeries
+        - outputUnit
+        - outputResolution
+      properties:
+        formulaId:
+          type: string
+          description: Unique formula identifier
+          example: "FORM-ANTEIL-GT-001"
+        name:
+          type: string
+          description: Human-readable formula name
+          example: "Portion above 100 kWh"
+        description:
+          type: string
+          description: Detailed description of what the formula calculates
+        expression:
+          $ref: '#/components/schemas/FormulaExpression'
+        inputTimeSeries:
+          type: array
+          items:
+            type: string
+          description: List of input time series parameter names
+          example: ["INPUT_TS"]
+        outputUnit:
+          type: string
+          enum: [KWH, MWH, KW, MW]
+          description: Unit of the calculated output
+        outputResolution:
+          type: string
+          description: ISO 8601 duration for output resolution
+          example: "PT15M"
+        createdBy:
+          type: string
+          description: ID of the market participant who created this formula
+        createdAt:
+          type: string
+          format: date-time
+          description: Formula creation timestamp
+        version:
+          type: string
+          description: Formula version
+          example: "1.0.0"
+        category:
+          type: string
+          enum:
+            - BALANCING
+            - GRID_USAGE
+            - BALANCING_AND_GRID_USAGE
+            - SELF_CONSUMPTION
+            - LOSSES
+            - AGGREGATION
+            - MATHEMATICAL
+            - TRANSFORMATION
+            - OTHER
+          description: |
+            Formula category for billing/settlement purposes:
+            - BALANCING: Billing/settlement relevant (Bil)
+            - GRID_USAGE: Network usage relevant (NN)
+            - BALANCING_AND_GRID_USAGE: Both billing and network usage (Bil/NN)
+            - SELF_CONSUMPTION: Self-consumption calculations (oEV)
+            - LOSSES: Loss calculations
+            - AGGREGATION: Aggregation formulas (Σ)
+            - MATHEMATICAL: Pure mathematical formulas (e.g., algebraic, trigonometric)
+            - TRANSFORMATION: Data transformation formulas
+            - OTHER: Other custom formulas
+        inputMeteringPoints:
+          type: array
+          items:
+            type: object
+            properties:
+              meteringPointId:
+                type: string
+                description: Metering point identifier
+                example: "ZP_3.1.1"
+              obisCode:
+                type: string
+                format: obis
+                description: OBIS code for this metering point
+                example: "1-1:1.29.0"
+              direction:
+                type: string
+                enum: [CONSUMPTION, FEED_IN, BIDIRECTIONAL]
+                description: Energy flow direction
+              description:
+                type: string
+                description: Human-readable description
+                example: "Block A Energy Meter"
+          description: List of required metering points with OBIS codes
+        outputObisCode:
+          type: string
+          format: obis
+          description: OBIS code for the calculated output
+          example: "1-1:1.29.0"
+        lossFactor:
+          type: number
+          description: Loss factor to apply (e.g., 0.0049 for 0.49% losses)
+          example: 0.0049
+        metadata:
+          type: object
+          additionalProperties: true
+          description: |
+            Additional metadata (flexible for custom fields):
+            - balancingGroup: Balancing group identifier
+            - facilityType: BATTERY, PV, WIND, POWER_PLANT, etc.
+            - voltageLevel: 110kV, 30kV, 20kV, 10kV, 0.4kV
+            - tsoOperator: TSO name (e.g., "50Hertz")
+            - customExpression: Free-form mathematical expression (e.g., "y = a*x^3 + b*x^2 + c*x + d")
+            - remarks: Additional notes
+
+    FormulaExpression:
+      type: object
+      required:
+        - function
+        - parameters
+      properties:
+        function:
+          type: string
+          enum:
+            - Anteil_Groesser_Als
+            - Anteil_Kleiner_Als
+            - Groesser_Als
+            - Round
+            - Conv_RKMG
+            - Wenn_Dann
+            - IMax
+            - IMin
+            - Grp_Sum
+            - Quer_Max
+            - Quer_Min
+          description: Calculation function name
+        parameters:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FormulaParameter'
+              - $ref: '#/components/schemas/FormulaExpression'
+          description: Parameters for the function (can be nested expressions)
+        description:
+          type: string
+          description: Optional description of this expression
+
+    FormulaParameter:
+      type: object
+      required:
+        - name
+        - value
+        - type
+      properties:
+        name:
+          type: string
+          description: Parameter name
+          example: "timeseries"
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: object
+          description: Parameter value (can be time series ID, constant, percentage, or OBIS code)
+        type:
+          type: string
+          enum:
+            - timeseries_ref
+            - constant
+            - string
+            - expression
+            - percentage
+            - loss_factor
+            - obis_code
+            - metering_point_ref
+          description: |
+            Type of parameter:
+            - timeseries_ref: Reference to a time series ID
+            - constant: Numeric constant value
+            - string: String value (e.g., comparator operators)
+            - expression: Nested formula expression
+            - percentage: Percentage value (e.g., 0.49 for 0.49%)
+            - loss_factor: Loss factor for calculations (e.g., 1 - lossPercentage)
+            - obis_code: OBIS code reference (e.g., "1-1:1.29.0")
+            - metering_point_ref: Reference to metering point ID
+        obisCode:
+          type: string
+          format: obis
+          description: Optional OBIS code for this parameter (e.g., "1-1:1.29.0" for W+, "1-1:2.29.0" for W−)
+          example: "1-1:1.29.0"
+        unit:
+          type: string
+          description: Optional unit for this parameter
+          example: "KWH"
+        scalingFactor:
+          type: number
+          description: Optional scaling factor to apply to the value
+          example: 1.0049
+
+    FormulaAcceptance:
+      type: object
+      required:
+        - messageId
+        - acceptanceTime
+        - status
+        - formulaIds
+      properties:
+        messageId:
+          type: string
+          description: Original message ID
+        acceptanceTime:
+          type: string
+          format: date-time
+          description: Time when formula was accepted
+        status:
+          type: string
+          enum: [ACCEPTED, PARTIALLY_ACCEPTED, REJECTED]
+          description: Acceptance status
+        formulaIds:
+          type: array
+          items:
+            type: string
+          description: IDs of accepted formulas
+        validationResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationResult'
+
+    FormulaList:
+      type: object
+      required:
+        - formulas
+        - totalCount
+      properties:
+        formulas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Formula'
+        totalCount:
+          type: integer
+          description: Total number of formulas
+        nextCursor:
+          type: string
+          description: Cursor for next page
+
+    # ==================== CALCULATION SCHEMAS ====================
+
+    CalculationRequest:
+      type: object
+      required:
+        - calculationId
+        - requestDate
+        - formulaId
+        - inputTimeSeries
+        - period
+        - requestedBy
+      properties:
+        calculationId:
+          type: string
+          description: Unique calculation identifier
+          example: "CALC-20251203-001"
+        requestDate:
+          type: string
+          format: date-time
+          description: Calculation request timestamp
+        formulaId:
+          type: string
+          description: ID of formula to execute
+          example: "FORM-ANTEIL-GT-001"
+        inputTimeSeries:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of parameter names to time series IDs
+          example:
+            INPUT_TS: "TS-MP10550000000001-A15MIN-20251202"
+        period:
+          type: object
+          required:
+            - start
+            - end
+          properties:
+            start:
+              type: string
+              format: date-time
+              description: Start of calculation period
+            end:
+              type: string
+              format: date-time
+              description: End of calculation period
+        requestedBy:
+          $ref: '#/components/schemas/MarketParticipant'
+        outputTimeSeriesId:
+          type: string
+          description: Optional output time series ID
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional metadata
+
+    CalculationStatus:
+      type: object
+      required:
+        - calculationId
+        - status
+        - acceptedAt
+      properties:
+        calculationId:
+          type: string
+          description: Calculation identifier
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+          description: Current status of calculation
+        acceptedAt:
+          type: string
+          format: date-time
+          description: Time when calculation was accepted
+
+    CalculationResult:
+      type: object
+      required:
+        - calculationId
+        - formulaId
+        - status
+      properties:
+        calculationId:
+          type: string
+          description: Calculation identifier
+        formulaId:
+          type: string
+          description: Formula that was executed
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+          description: Calculation status
+        outputTimeSeriesId:
+          type: string
+          description: ID of the resulting time series (when completed)
+        completedAt:
+          type: string
+          format: date-time
+          description: Completion timestamp
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+          description: Error details if calculation failed
+
+  responses:
+    BadRequest:
+      description: Bad Request - Invalid input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: "https://api.formula-registry.example/problems/bad-request"
+            title: "Bad Request"
+            status: 400
+            detail: "The request contains invalid parameters"
+            instance: "/time-series"
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    ValidationError:
+      description: Unprocessable Entity - Validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+          example:
+            type: "https://api.formula-registry.example/problems/validation-error"
+            title: "Validation Error"
+            status: 422
+            detail: "Time series data validation failed"
+            invalidParams:
+              - name: "intervals[5].quantity"
+                reason: "Must have maximum 6 decimal places"
+              - name: "intervals[12].quality"
+                reason: "Invalid quality indicator"
+
+    TooManyRequests:
+      description: Too Many Requests - Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds until rate limit reset
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'

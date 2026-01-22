@@ -1,0 +1,63 @@
+services:
+  # Backend API
+  formula-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: energy-formula-api
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - formula-network
+
+  # Frontend Web UI
+  formula-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: energy-formula-builder
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      formula-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - formula-network
+
+  # Optional: Demo client as a service (runs once then exits)
+  demo-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: formula-demo-client
+    command: python -c "from demo_client import DemoClient; client = DemoClient('http://formula-api:8000'); client.run_demo()"
+    depends_on:
+      formula-api:
+        condition: service_healthy
+    networks:
+      - formula-network
+    profiles:
+      - demo  # Only run when explicitly requested: docker-compose --profile demo up
+
+networks:
+  formula-network:
+    driver: bridge
