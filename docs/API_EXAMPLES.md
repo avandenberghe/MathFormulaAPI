@@ -9,7 +9,7 @@ Most endpoints require authentication. First, get an access token:
 ```bash
 export TOKEN=$(curl -s -X POST http://localhost:8000/oauth/token \
   -d "grant_type=client_credentials&client_id=demo-client&client_secret=demo-secret" \
-  | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 echo "Token: $TOKEN"
 ```
 
@@ -151,7 +151,7 @@ Run all steps in sequence to test the full API flow:
 # 1. Get authentication token
 export TOKEN=$(curl -s -X POST http://localhost:8000/oauth/token \
   -d "grant_type=client_credentials&client_id=demo-client&client_secret=demo-secret" \
-  | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
 # 2. Submit a formula
 curl -X POST http://localhost:8000/formula/v0.0.1 \
