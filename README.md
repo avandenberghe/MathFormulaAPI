@@ -106,7 +106,8 @@ Headers:
 
 ### Documentation
 
-- **[EDI@Energy Formula Examples](docs/EDI_ENERGY_FORMULA_EXAMPLES.md)** - Comprehensive examples for the formula specification (operations, operands, nesting, validation)
+- **[EDI@Energy Konformitätsnachweis](docs/EDI_ENERGY_KONFORMITAETSNACHWEIS.md)** - Compliance demonstration for the EDI@Energy formula specification (German)
+- **[EDI@Energy Formula Examples](docs/EDI_ENERGY_FORMULA_EXAMPLES.md)** - Technical API reference with curl examples (English)
 - **[API Examples](docs/API_EXAMPLES.md)** - General API usage (time series, calculations, authentication)
 
 ## Project Structure
