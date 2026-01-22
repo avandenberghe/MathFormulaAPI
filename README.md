@@ -104,7 +104,10 @@ Headers:
   Authorization: Bearer <token>
 ```
 
-For additional endpoints and curl examples, see [docs/API_EXAMPLES.md](docs/API_EXAMPLES.md).
+### Documentation
+
+- **[EDI@Energy Formula Examples](docs/EDI_ENERGY_FORMULA_EXAMPLES.md)** - Comprehensive examples for the formula specification (operations, operands, nesting, validation)
+- **[API Examples](docs/API_EXAMPLES.md)** - General API usage (time series, calculations, authentication)
 
 ## Project Structure
 
