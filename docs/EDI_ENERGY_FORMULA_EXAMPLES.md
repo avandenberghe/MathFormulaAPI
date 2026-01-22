@@ -79,16 +79,9 @@ Each operand must be exactly one of:
 
 ### 1. Addition (`add`)
 
-Sum multiple meter readings with loss factors applied.
+**Formula:** `MeterA + MeterB`
 
-**Formula:**
-```
-Result = A + B
-
-Where:
-  A = meloId ...3054 (consumption) with 2% transformer loss, 1% conduction loss
-  B = meloId ...3055 (consumption) with 2% transformer loss, 1% conduction loss
-```
+Sums two consumption meter readings, each with 2% transformer loss and 1% conduction loss applied.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -130,16 +123,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### 2. Subtraction (`sub`)
 
-Calculate net consumption (consumption minus production).
+**Formula:** `Consumption - Production`
 
-**Formula:**
-```
-Result = A - B
-
-Where:
-  A = meloId ...3054 (consumption)
-  B = meloId ...3055 (production)
-```
+Calculates net consumption by subtracting production meter reading from consumption meter reading.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -181,15 +167,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### 3. Multiplication (`mul`)
 
-Apply scaling factor to meter reading (e.g., 0.49% loss deduction).
+**Formula:** `MeterReading × 0.9951`
 
-**Formula:**
-```
-Result = A × 0.9951
-
-Where:
-  A = meloId ...3054 (consumption)
-```
+Applies a 0.49% loss deduction to the meter reading (multiplying by 1 - 0.0049 = 0.9951).
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -223,15 +203,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### 4. Division (`div`)
 
-Convert units (e.g., Wh to kWh).
+**Formula:** `MeterReading ÷ 1000`
 
-**Formula:**
-```
-Result = A ÷ 1000
-
-Where:
-  A = meloId ...3054 (consumption)
-```
+Divides the meter reading by 1000 (e.g., converting Wh to kWh).
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -265,15 +239,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### 5. Absolute Value (`pos`)
 
-Get absolute value of a meter reading.
+**Formula:** `|MeterReading|`
 
-**Formula:**
-```
-Result = |A|
-
-Where:
-  A = meloId ...3054 (consumption)
-```
+Returns the absolute value of the meter reading.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -304,18 +272,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### 6. Single Operand (`operand`)
 
-Reference a single meter with loss factors applied.
+**Formula:** `MeterReading × 1.02 × 1.01 × 0.95`
 
-**Formula:**
-```
-Result = A × (1 + 0.02) × (1 + 0.01) × 0.95
-
-Where:
-  A = meloId ...3054 (consumption)
-  0.02 = lossFactorTransformer
-  0.01 = lossFactorConduction
-  0.95 = distributionFactorEnergyQuantity
-```
+References a single meter with loss factors applied: 2% transformer loss, 1% conduction loss, and 95% distribution factor.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -407,14 +366,9 @@ Note: Must start with a letter.
 
 ### Net Consumption with Loss Adjustment
 
-**Formula:**
-```
-Result = (A - B) × 0.98
+**Formula:** `(Consumption - Production) × 0.98`
 
-Where:
-  A = meloId ...3054 (consumption)
-  B = meloId ...3055 (production)
-```
+Calculates net consumption and applies a 2% loss adjustment.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -463,15 +417,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ### Complex Multi-Meter Aggregation
 
-**Formula:**
-```
-Result = (A + B) - (C + 50.0)
+**Formula:** `(MeterA + MeterB) - (MeterC + 50.0)`
 
-Where:
-  A = meloId ...3054 (consumption)
-  B = meloId ...3055 (consumption)
-  C = meloId ...3056 (consumption)
-```
+Sums two meters, then subtracts a third meter plus a constant offset.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -537,12 +485,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ## Using Network Location ID (neloId)
 
-Instead of `maloId`, you can use `neloId`.
+**Formula:** `100.0`
 
-**Formula:**
-```
-Result = 100.0
-```
+A constant value. Demonstrates using `neloId` instead of `maloId` as the location identifier.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -569,13 +514,11 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ## Multiple Time Slices
 
-Submit formulas with different validity periods.
-
 **Formulas:**
-```
-Time Slice 1 (Jan-Jun): Result = 100 + 50 = 150
-Time Slice 2 (Jul-Dec): Result = 200 + 75 = 275
-```
+- Time Slice 1 (Jan-Jun): `100 + 50`
+- Time Slice 2 (Jul-Dec): `200 + 75`
+
+Demonstrates submitting different formulas for different validity periods within the same request.
 
 ```bash
 curl -X POST http://localhost:8000/formula/v0.0.1 \
@@ -617,12 +560,9 @@ curl -X POST http://localhost:8000/formula/v0.0.1 \
 
 ## Idempotency (Retry Support)
 
-Use `initialTransactionId` header for safe retries.
+**Formula:** `100`
 
-**Formula:**
-```
-Result = 100
-```
+Demonstrates using `initialTransactionId` header for safe retries. Resubmitting with the same `initialTransactionId` returns the cached response.
 
 ```bash
 # First request
