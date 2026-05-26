@@ -1,4 +1,4 @@
-openapi: 3.0.3
+onopenapi: 3.0.3
 info:
   title: Energy Time Series API with Formula Support
   version: 1.0.0
@@ -1168,7 +1168,19 @@ components:
             - Grp_Sum
             - Quer_Max
             - Quer_Min
-          description: Calculation function name
+            - add
+            - sub
+            - mul
+            - div
+            - pos
+          description: |
+            Calculation function name. Includes both named TSO functions and
+            primitive arithmetic operators:
+            - add: n-ary addition (sum of all parameters)
+            - sub: binary subtraction (parameter[0] - parameter[1])
+            - mul: n-ary multiplication (product of all parameters)
+            - div: binary division (parameter[0] / parameter[1])
+            - pos: positive-value clipping (unary; negative result → 0, positive → unchanged)
         parameters:
           type: array
           items:
@@ -1232,6 +1244,42 @@ components:
           type: number
           description: Optional scaling factor to apply to the value
           example: 1.0049
+        lossFactorTransformer:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            Per-parameter transformer loss factor (Verlustfaktor Trafo) as a
+            decimal percentage between 0 and 1. Applied to this operand when
+            evaluating the expression. Equivalent to EDI@Energy
+            meloOperand.lossFactorTransformer.
+          example: 0.0049
+        lossFactorConduction:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            Per-parameter conduction loss factor (Verlustfaktor Leitung) as a
+            decimal percentage between 0 and 1. Equivalent to EDI@Energy
+            meloOperand.lossFactorConduction.
+          example: 0.0021
+        distributionFactor:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            Per-parameter distribution factor for energy quantity
+            (Verteilfaktor Energiemenge) as a decimal percentage between 0
+            and 1. Used when the metering value must be split across multiple
+            consumers/producers. Equivalent to EDI@Energy
+            meloOperand.distributionFactorEnergyQuantity.
+          example: 1.0
+        energyDirection:
+          type: string
+          enum: [CONSUMPTION, FEED_IN, BIDIRECTIONAL]
+          description: |
+            Optional direction of energy flow for this operand. Equivalent
+            to EDI@Energy meloOperand.energyDirection.
 
     FormulaAcceptance:
       type: object
