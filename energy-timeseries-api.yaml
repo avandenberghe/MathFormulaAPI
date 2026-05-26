@@ -1038,10 +1038,18 @@ components:
         - formulaId
         - name
         - description
-        - expression
         - inputTimeSeries
         - outputUnit
         - outputResolution
+      description: |
+        Calculation formula definition. Exactly one of `expression` or
+        `timeSlices` must be provided:
+        - `expression`: single expression valid for the formula's whole
+          lifetime (simple case)
+        - `timeSlices`: ordered list of expressions, each with its own
+          validity window — equivalent to EDI@Energy
+          calculationFormulaTimeSlices, used when the calculation rule
+          changes over time
       properties:
         formulaId:
           type: string
@@ -1056,6 +1064,14 @@ components:
           description: Detailed description of what the formula calculates
         expression:
           $ref: '#/components/schemas/FormulaExpression'
+        timeSlices:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/FormulaTimeSlice'
+          description: |
+            Ordered list of time-sliced expression variants. When present,
+            replaces the top-level `expression`. Slices must not overlap.
         inputTimeSeries:
           type: array
           items:
@@ -1280,6 +1296,41 @@ components:
           description: |
             Optional direction of energy flow for this operand. Equivalent
             to EDI@Energy meloOperand.energyDirection.
+
+    FormulaTimeSlice:
+      type: object
+      required:
+        - timeSliceId
+        - periodOfUseFrom
+        - expression
+      description: |
+        One validity period of a time-sliced formula. Equivalent to
+        EDI@Energy calculationFormulaTimeSlice.
+      properties:
+        timeSliceId:
+          type: string
+          description: Unique identifier of this time slice within the formula
+          example: "TS-2025-Q1"
+        periodOfUseFrom:
+          type: string
+          format: date-time
+          description: Start of the validity period (inclusive)
+          example: "2025-01-01T00:00:00Z"
+        periodOfUseTo:
+          type: string
+          format: date-time
+          description: |
+            End of the validity period (exclusive). Omit for an
+            open-ended slice that remains valid indefinitely.
+          example: "2025-04-01T00:00:00Z"
+        timeSliceQuality:
+          type: string
+          enum: [PRELIMINARY, BINDING, CORRECTED, FINAL]
+          description: |
+            Quality / lifecycle state of this time slice. Equivalent to
+            EDI@Energy timeSliceQuality.
+        expression:
+          $ref: '#/components/schemas/FormulaExpression'
 
     FormulaAcceptance:
       type: object
